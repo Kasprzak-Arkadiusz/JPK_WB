@@ -55,17 +55,17 @@ GO
 IF NOT EXISTS
 (	SELECT 1
 		from sys.objects o (NOLOCK)
-		WHERE	(o.[name] = 'ValidateNaglowek_imp_tmp')
+		WHERE	(o.[name] = 'ValidateNaglowek')
 		AND		(OBJECTPROPERTY(o.object_id,'IsProcedure') = 1)
 )
 BEGIN
 	DECLARE @stmt nvarchar(100)
-	SET @stmt = 'CREATE PROCEDURE dbo.ValidateNaglowek_imp_tmp AS '
+	SET @stmt = 'CREATE PROCEDURE dbo.ValidateNaglowek AS '
 	EXEC sp_sqlexec @stmt
 END
 GO
 
-Alter Procedure [dbo].[ValidateNaglowek_imp_tmp] (@errno int = 0 output)
+Alter Procedure [dbo].[ValidateNaglowek] (@errno int = 0 output)
 AS
     SET @errno = 0
 
@@ -194,34 +194,22 @@ AS
     end catch
 GO
 
-/*  Things to validate:
-        + Verify that 'Numer' column has unique values
-        + File should have only data related to one client (Podmiot)
-        + Check that KodKraju value is equal to 'PL'
-        + File should have only one bank account (rachunekBankowy)
-        + Check that NumerRachunku is in the IBAN format
-        + Check format of KodPocztowy column
-        + Date format (DataOd and DataDo)
-        + DataOd should be prior to or the same as DataDo
-        + Check that decimal columns are in the correct format (SaldoPoczątkowe, SaldoKońcowe)
-*/
-
-Exec ValidateNaglowek_imp_tmp @errno = 0
+Exec ValidateNaglowek @errno = 0
 
 IF NOT EXISTS
 (	SELECT 1
 		from sys.objects o (NOLOCK)
-		WHERE	(o.[name] = 'ValidateWiersz_imp_tmp')
+		WHERE	(o.[name] = 'ValidateWiersz')
 		AND		(OBJECTPROPERTY(o.object_id,'IsProcedure') = 1)
 )
 BEGIN
 	DECLARE @stmt nvarchar(100)
-	SET @stmt = 'CREATE PROCEDURE dbo.ValidateWiersz_imp_tmp AS '
+	SET @stmt = 'CREATE PROCEDURE dbo.ValidateWiersz AS '
 	EXEC sp_sqlexec @stmt
 END
 GO
 
-Alter Procedure [dbo].[ValidateWiersz_imp_tmp] (@errno int = 0 output)
+Alter Procedure [dbo].[ValidateWiersz] (@errno int = 0 output)
 AS
     SET @errno = 0
 
@@ -239,38 +227,6 @@ AS
         VALUES (@err_msg, CURRENT_TIMESTAMP, @err_code)
         RAISERROR(@err_msg, 14, 1)
     end
-
-    /* Odkomentować, jeśli nazwa podmiotu w Wyciąg wiersz określa podmiot, do którego należy rachunek bankowy. Jeśli
-       natomiast podmiotem jest odbiorca, nadawca przelewu, to usunąć ten fragment
-
-    -- Sprawdzamy, czy podany jest tylko jeden Podmiot
-    SELECT @numberOfResults = COUNT(Distinct w.NazwaPodmiotu)
-        FROM WyciagWiersz_imp_tmp w
-
-    IF @numberOfResults <> 1
-    begin
-        SET @err_msg = N'Liczba podmiotów jest różna od 1'
-        INSERT INTO LOG (OpisBledu, DataWystapienia, KodBledu)
-        VALUES (@err_msg, CURRENT_TIMESTAMP, @err_code)
-        RAISERROR(@err_msg, 14, 1)
-    end
-
-    -- Sprawdzamy, czy podany podmiot jest taki sam jak w pliku z danymi do nagłówka
-    DECLARE @headerSubject nvarchar(34), @statementSubject nvarchar(34)
-
-    SELECT Distinct @headerSubject = n.NazwaPodmiotu FROM Naglowek_imp_tmp n
-    SELECT Distinct @statementSubject = w.NazwaPodmiotu FROM WyciagWiersz_imp_tmp w
-
-    SELECT @headerSubject = dbo.RemoveWhitespaces(@headerSubject)
-    SELECT @statementSubject = dbo.RemoveWhitespaces(@statementSubject)
-
-    IF @headerSubject <> @statementSubject
-    begin
-        SET @err_msg = N'Podmiot w pliku z wyciągami jest różny od podmiotu w pliku z danymi do nagłówka'
-        INSERT INTO LOG (OpisBledu, DataWystapienia, KodBledu)
-        VALUES (@err_msg, CURRENT_TIMESTAMP, @err_code)
-        RAISERROR(@err_msg, 14, 1)
-    end*/
 
     -- Sprawdzamy poprawność formatu salda i kwoty
     BEGIN TRY
@@ -319,16 +275,4 @@ AS
     end
 GO
 
-Exec ValidateWiersz_imp_tmp @errno = 0
-
-/* Things to validate:
-        + Column 'NumerWiersza' should be unique
-        + File should have only data related to one bank account (RachunekBankowy) equal to column in Naglowek_imp_tmp
-        + Check that KwotaOperacji and SaldoOperacji is in the correct format
-        + Check that DataOperacji is in the correct format
-        + Check that DataOperacji is within the time frame specifed by the header(nagłówek)
-*/
-
-/* Gdybym się nudził
-   - Usunąć kolumnę 'NumerWiersza' z Excela i bazy danych
-*/
+Exec ValidateWiersz @errno = 0
