@@ -273,6 +273,19 @@ AS
         VALUES (@err_msg, CURRENT_TIMESTAMP, @err_code)
         RAISERROR(@err_msg, 14, 1)
     end
+
+    -- Sprawdzamy, czy każdy wiersz ma odpowiadający nagłówek
+    SELECT @numberOfResults = COUNT(w.Numer) FROM WyciagWiersz_imp_tmp w
+    LEFT JOIN Naglowek_imp_tmp N on w.Numer = N.Numer
+    WHERE n.Numer IS NULL
+
+    IF @numberOfResults > 0
+    begin
+        SET @err_msg = N'Istnieje wiersz bez nagłówka'
+        INSERT INTO LOG (OpisBledu, DataWystapienia, KodBledu)
+        VALUES (@err_msg, CURRENT_TIMESTAMP, @err_code)
+        RAISERROR(@err_msg, 14, 1)
+    end
 GO
 
 Exec ValidateWiersz @errno = 0
