@@ -127,14 +127,45 @@ AS
     RIGHT JOIN Naglowek_imp_tmp n ON n.Numer = na.Numer
     WHERE na.Numer IS NULL
 
-    SELECT * FROM #Headers
-
      -- Sprawdzamy, czy naglowek z podanym numerem jest już w tabeli Naglowek
     IF (SELECT COUNT(h.Numer) FROM #Headers h) > 0
     begin
         INSERT INTO Naglowek(DataOd, DataDo, KodUrzedu, Podmiot, SaldoPoczatkowe, SaldoKoncowe, Numer)
-        (SELECT h.DataOd, h.DataDo, h.KodUrzedu, p.Id, h.SaldoPoczatkowe, h.SaldoKoncowe, h.Numer FROM #Headers h
-            JOIN Podmiot p ON p.NIP = h.NIP)
+        SELECT h.DataOd, h.DataDo, h.KodUrzedu, p.Id, h.SaldoPoczatkowe, h.SaldoKoncowe, h.Numer FROM #Headers h
+            JOIN Podmiot p ON p.NIP = h.NIP
+    end
+
+     -- Wstawiamy dane dotyczące tabeli WyciagWiersz
+    IF OBJECT_ID('tempdb..#Rows') IS NOT NULL
+        drop table #Rows
+
+    SELECT WWit.Numer,
+           WWit.NazwaPodmiotu,
+           dbo.STR2DATE(WWit.DataOperacji) AS DataOperacji,
+           WWit.OpisOperacji,
+           WWit.NumerWiersza,
+           dbo.STR2DECIMAL(WWit.KwotaOperacji) AS KwotaOperacji,
+           dbo.STR2DECIMAL(WWit.SaldoOperacji) AS SaldoOperacji
+    INTO #Rows
+    FROM WyciagWiersz_imp_tmp WWit
+
+    IF OBJECT_ID('tempdb..#UniqueRows') IS NOT NULL
+        drop table #UniqueRows
+
+    SELECT * INTO #UniqueRows
+    FROM (
+             SELECT r.Numer, r.NazwaPodmiotu, r.DataOperacji, r.OpisOperacji, r.KwotaOperacji, r.SaldoOperacji
+             FROM #Rows r
+             EXCEPT
+             SELECT w.Numer, w.NazwaPodmiotu, w.DataOperacji, w.OpisOperacji, w.KwotaOperacji, w.SaldoOperacji
+             FROM WyciagWiersz w
+         ) AS ur
+
+    IF (SELECT COUNT(ur.Numer) FROM #UniqueRows ur) > 0
+    begin
+        INSERT INTO WyciagWiersz(NaglowekId, DataOperacji, NazwaPodmiotu, OpisOperacji, KwotaOperacji, SaldoOperacji, Numer)
+        SELECT n.Id, r.DataOperacji, r.NazwaPodmiotu, r.OpisOperacji, r.KwotaOperacji, r.SaldoOperacji, r.Numer FROm #Rows r
+        JOIN Naglowek n on r.Numer = n.Numer
     end
 
     COMMIT TRANSACTION
