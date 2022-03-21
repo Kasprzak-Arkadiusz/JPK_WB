@@ -164,7 +164,7 @@ AS
     IF (SELECT COUNT(ur.Numer) FROM #UniqueRows ur) > 0
     begin
         INSERT INTO WyciagWiersz(NaglowekId, DataOperacji, NazwaPodmiotu, OpisOperacji, KwotaOperacji, SaldoOperacji, Numer)
-        SELECT n.Id, r.DataOperacji, r.NazwaPodmiotu, r.OpisOperacji, r.KwotaOperacji, r.SaldoOperacji, r.Numer FROm #Rows r
+        SELECT n.Id, r.DataOperacji, r.NazwaPodmiotu, r.OpisOperacji, r.KwotaOperacji, r.SaldoOperacji, r.Numer FROM #Rows r
         JOIN Naglowek n on r.Numer = n.Numer
     end
 
