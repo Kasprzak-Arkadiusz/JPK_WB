@@ -192,6 +192,19 @@ AS
         VALUES (@err_msg, CURRENT_TIMESTAMP, @err_code)
         RAISERROR(@err_msg, 14, 1)
     end catch
+
+    -- Sprawdzamy, czy każdy nagłówek ma odpowiadające wiersze
+    SELECT @numberOfResults = COUNT(N.Numer) FROM Naglowek_imp_tmp n
+    LEFT JOIN WyciagWiersz_imp_tmp w on w.Numer = N.Numer
+    WHERE w.Numer IS NULL
+
+    IF @numberOfResults > 0
+    begin
+        SET @err_msg = N'Istnieje nagłówek bez wiersza'
+        INSERT INTO LOG (OpisBledu, DataWystapienia, KodBledu)
+        VALUES (@err_msg, CURRENT_TIMESTAMP, @err_code)
+        RAISERROR(@err_msg, 14, 1)
+    end
 GO
 
 Exec ValidateNaglowek @errno = 0

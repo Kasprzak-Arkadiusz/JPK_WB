@@ -1,6 +1,3 @@
-use MS_Business_Intelligence
-go
-
 create table LOG
 (
     Id              int identity
@@ -109,16 +106,12 @@ create unique index Naglowek_Id_uindex
     on Naglowek (Id)
 go
 
-create unique index Podmiot_Nazwa_uindex
-    on Podmiot (Nazwa)
+create unique index Naglowek_Numer_uindex
+    on Naglowek (Numer)
 go
 
-create unique index Podmiot_KodKraju_uindex
-    on Podmiot (KodKraju)
-go
-
-create unique index Podmiot_Id_uindex
-    on Podmiot (Id)
+create unique index Podmiot_NIP_uindex
+    on Podmiot (NIP)
 go
 
 create unique index RachunekBankowy_Id_uindex
@@ -131,7 +124,6 @@ go
 
 create table WyciagWiersz
 (
-    Id            int            not null,
     NaglowekId    int            not null
         constraint WyciagWiersz_Naglowek_fk
             references Naglowek,
@@ -139,12 +131,20 @@ create table WyciagWiersz
     NazwaPodmiotu nvarchar(256)  not null,
     OpisOperacji  nvarchar(256)  not null,
     KwotaOperacji decimal(18, 2) not null,
-    SaldoOperacji decimal(18, 2) not null
+    SaldoOperacji decimal(18, 2) not null,
+    Numer         int            not null,
+    Id            int identity
+        constraint WyciagWiersz_pk
+            primary key
 )
 go
 
-exec sp_addextendedproperty 'MS_Description', N'Nazwa podmiotu będącego stroną operacji', 'SCHEMA',
-    'dbo', 'TABLE','WyciagWiersz', 'COLUMN', 'NazwaPodmiotu'
+exec sp_addextendedproperty 'MS_Description', N'Nazwa podmiotu będącego stroną operacji', 'SCHEMA', 'dbo', 'TABLE',
+     'WyciagWiersz', 'COLUMN', 'NazwaPodmiotu'
+go
+
+create unique index WyciagWiersz_Id_uindex
+    on WyciagWiersz (Id)
 go
 
 create table WyciagWiersz_imp_tmp
@@ -155,6 +155,14 @@ create table WyciagWiersz_imp_tmp
     OpisOperacji  nvarchar(256) not null,
     KwotaOperacji nvarchar(20)  not null,
     SaldoOperacji nvarchar(256) not null,
-    Numer         int           not null
+    Numer         int           not null,
+    Id            int identity
+        constraint WyciagWiersz_imp_tmp_pk
+            primary key
 )
 go
+
+create unique index WyciagWiersz_imp_tmp_Id_uindex
+    on WyciagWiersz_imp_tmp (Id)
+go
+
